@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Expense Tracker</title>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --background: #f3f4f6;
+            --text: #1f2937;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--background);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 { text-align: center; color: var(--primary); }
+
+        .balance-box {
+            text-align: center;
+            background: #eeebff;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .balance-box h2 { margin: 0; font-size: 2rem; color: var(--primary); }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label { display: block; margin-bottom: 5px; font-weight: bold; }
+
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            box-sizing: border-box;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+        }
+
+        button:hover { background: #4338ca; }
+
+        .list-title { margin-top: 30px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+
+        ul { list-style: none; padding: 0; }
+
+        li {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px;
+            background: #f9fafb;
+            margin-bottom: 8px;
+            border-radius: 6px;
+            align-items: center;
+            border-left: 5px solid #ccc;
+        }
+
+        li.income { border-left-color: var(--success); }
+        li.expense { border-left-color: var(--danger); }
+
+        .delete-btn {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Smart Budget</h1>
+    
+    <div class="balance-box">
+        <p>Total Balance</p>
+        <h2 id="balance">\$0.00</h2>
+    </div>
+
+    <form id="exp-form">
+        <div class="form-group">
+            <label for="text">Description</label>
+            <input type="text" id="text" placeholder="e.g., Salary, Groceries, Gas..." required>
+        </div>
+        <div class="form-group">
+            <label for="amount">Amount</label>
+            <input type="number" id="amount" placeholder="Enter amount..." required>
+        </div>
+        <div class="form-group">
+            <label for="type">Type</label>
+            <select id="type">
+                <option value="income">Income (+)</option>
+                <option value="expense">Expense (-)</option>
+            </select>
+        </div>
+        <button type="submit">Add Transaction</button>
+    </form>
+
+    <h3 class="list-title">Transaction History</h3>
+    <ul id="list"></ul>
+</div>
+
+<script>
+    const balance = document.getElementById('balance');
+    const list = document.getElementById('list');
+    const form = document.getElementById('exp-form');
+    const text = document.getElementById('text');
+    const amount = document.getElementById('amount');
+    const type = document.getElementById('type');
+
+    // Get data from browser local storage
+    let transactions = localStorage.getItem('transactions') !== null ? JSON.parse(localStorage.getItem('transactions')) : [];
+
+    function addTransactionDOM(transaction) {
+        const sign = transaction.type === 'income' ? '+' : '-';
+        const item = document.createElement('li');
+
+        item.classList.add(transaction.type);
+        item.innerHTML = `
+            ${transaction.text} <span>${sign}$${Math.abs(transaction.amount)}</span>
+            <button class="delete-btn" onclick="removeTransaction(${transaction.id})">Delete</button>
+        `;
+
+        list.appendChild(item);
+    }
+
+    function updateValues() {
+        const amounts = transactions.map(t => t.type === 'income' ? t.amount : -t.amount);
+        const total = amounts.reduce((acc, item) => (acc += item), 0).toFixed(2);
+        balance.innerText = `$${total}`;
+    }
+
+    function init() {
+        list.innerHTML = '';
+        transactions.forEach(addTransactionDOM);
+        updateValues();
+    }
+
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const transaction = {
+            id: Math.floor(Math.random() * 100000000),
+            text: text.value,
+            amount: +amount.value,
+            type: type.value
+        };
+
+        transactions.push(transaction);
+        addTransactionDOM(transaction);
+        updateValues();
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+
+        text.value = '';
+        amount.value = '';
+    });
+
+    window.removeTransaction = function(id) {
+        transactions = transactions.filter(t => t.id !== id);
+        localStorage.setItem('transactions', JSON.stringify(transactions));
+        init();
+    }
+
+    init();
+</script>
+</body>
+</html>
